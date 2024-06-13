@@ -68,11 +68,18 @@ architecture labArch of ProjetoFinal is
 	signal tamanhoLetra : std_logic_vector (7 downto 0);
 	signal ehTraco : std_logic;
 	signal sipoIn : std_logic;
+	signal estadoAtual : std_logic
 
 	begin
 		-- Debugging:
 		ledsOut(0) => ehTraco;
 		ledsOut(1) => letraFinalizada; 
+
+		toggleEstado : ffToggle port map (
+			Q => estadoAtual,
+			Clk => (not pb(1)),-- or limite de RAM
+			Reset => '0'
+		);
 
 		tempo : Timing_Reference port map (
 			clk => CLK,
