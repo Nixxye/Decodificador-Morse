@@ -42,6 +42,15 @@ architecture labArch of FinalProject is
 	);
 	end component;
 
+	component counter7 is
+		port (
+			clock : in std_logic;
+			reset : in std_logic;
+			count : out std_logic_vector(6 downto 0)
+		);
+	end component;
+	
+
 	component ffToggle is 
 	port(
 		Q : out std_logic;    
@@ -72,11 +81,11 @@ architecture labArch of FinalProject is
 
 	component SIPO is 
 	port(
-		pOut : std_logic_vector (4 downto 0);
-		serialIn : std_logic;
-		clk : std_logic;
-		set : std_logic;
-		clear : std_logic
+        pOut : out std_logic_vector (4 downto 0);
+        serialIn : in std_logic;
+        clk : in std_logic;
+        set : in std_logic;
+        clear : in std_logic
 	);
  	end component;
 	 -- Dah são os longos e dit são os curtos:
@@ -90,17 +99,17 @@ architecture labArch of FinalProject is
 	 signal sipoIn : std_logic;
 	 signal state : std_logic;
 	 signal letterInfo : std_logic_vector (4 downto 0);
-	 signal ramADD : std_logic_vector (7 downto 0);
+	 signal ramADD : std_logic_vector (6 downto 0);
 	 signal ramOut : std_logic_vector (7 downto 0);
 
 	begin
 		-- Debugging:
-		ledsOut(0) => isDah;
-		ledsOut(1) => endLetter; 
+		ledsOut(0) <= isDah;
+		ledsOut(1) <= endLetter; 
 
 		toggleEstado : ffToggle port map (
 			Q => state,
-			Clk => (not pb(1)) or (ramADD = (others => '1')), -- Pressionamento de botão ou RAM lotada:
+			Clk => (not pb(1)) or (ramADD(0) and ramADD(1) and ramADD(2) and ramADD(3) and ramADD(4) and ramADD(5) and ramADD(6)), -- Pressionamento de botão ou RAM lotada:
 			Reset => '0'
 		);
 
@@ -141,7 +150,7 @@ architecture labArch of FinalProject is
 			D => isDah,
 			Set => '0',
 			Reset => '0'
-		)	
+		);
 		-- Desloca quando o botão é solto:
 		sp: SIPO port map(
 			pOut => letterInfo,
@@ -150,7 +159,7 @@ architecture labArch of FinalProject is
 			set => '0',
 			clear => '0'
 		);
-		contRamADD : counter port map (
+		contRamADD : counter7 port map (
 			clock => endLetter and not clkCont, -- Em descida para ser depois dos outros.
 			reset =>'0',
 			count => ramADD 
@@ -158,9 +167,9 @@ architecture labArch of FinalProject is
 		ram : Single_port_RAM_VHDL port map(
 			RAM_ADDR => ramADD,
 			-- ENTRADA RAM : SIPO (5 bits) + sizeLetter (3 bits)
-			RAM_DATA_IN => letterInfo & sizeLetter;
+			RAM_DATA_IN => letterInfo & sizeLetter(2 downto 0),
 			RAM_WR => not state,
-			RAM_CLOCK => endLetter and not clkCont
+			RAM_CLOCK => endLetter and not clkCont,
 			RAM_DATA_OUT => ramOut
 		);
 

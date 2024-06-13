@@ -4,11 +4,11 @@ USE IEEE.Std_logic_1164.all;
 
 entity SIPO is 
    port(
-        pOut : std_logic_vector (4 downto 0);
-        serialIn : std_logic;
-        clk : std_logic;
-        set : std_logic;
-        clear : std_logic
+        pOut : out std_logic_vector (4 downto 0);
+        serialIn : in std_logic;
+        clk : in std_logic;
+        set : in std_logic;
+        clear : in std_logic
    );
 end SIPO;
 architecture Behavioral of SIPO is  
@@ -22,13 +22,13 @@ architecture Behavioral of SIPO is
     );
     end component;
     -- Conecta os flip flops:
-    signal ffOut : std_logic_vector (3 downto 0)
+    signal ffOut : std_logic_vector (3 downto 0);
 begin  
     -- Mais significativos nos primeiros flip flops: 
-    pOut(4) => ffOut(0);
-    pOut(3) => ffOut(1);
-    pOut(2) => ffOut(2);
-    pOut(1) => ffOut(3);
+    pOut(4) <= ffOut(0);
+    pOut(3) <= ffOut(1);
+    pOut(2) <= ffOut(2);
+    pOut(1) <= ffOut(3);
     
     ff0 : ffD port map(
         Q => ffOut(0),  
