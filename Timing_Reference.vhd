@@ -18,7 +18,7 @@ process(clk)
 	begin
 	if(clk'event and clk='1') then
 		count <=count+1;
-		if (count = 100000/4) then
+		if (count = 3000000/4) then
 			tmp <= NOT tmp;
 			count <= 1;
 		end if;

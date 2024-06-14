@@ -119,7 +119,7 @@ architecture labArch of FinalProject is
 		);
 		contpause : counter port map (
 			clock => clkCont,
-			reset => pb(0),
+			reset => not pb(0),
 			count => pause
 		);
 		contsizeLetter : counter port map (
@@ -130,12 +130,12 @@ architecture labArch of FinalProject is
 		-- AMBOS OS TOGGLES PRECISAM SER FALLING EDGE PARA QUE QUANDO O BOTÃO SEJA SOLTO O SISTEMA VERIFIQUE EM FALLING EDGE TODAS AS INFORMAÇÕES DO PULSO.
 		togglePause : ffToggle port map (
 			Q => endLetter,
-			Clk => (not endLetter and pause(6)) or (endLetter and pb(0)), --Verifica pause para o tempo
+			Clk => (not endLetter and pause(5)) or (endLetter and not pb(0)), --Verifica pause para o tempo
 			Reset => '0'
 		);
 		contimeDah : counter port map (
 			clock => clkCont,
-			reset => not pb(0),
+			reset => pb(0),
 			count => timeDah
 		);
 		-- Define se é ponto ou traço de acordo com o tempo de pressionamento
