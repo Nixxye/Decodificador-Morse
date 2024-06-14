@@ -14,19 +14,12 @@ entity FinalProject is
 		sevenOut4 : out std_logic_vector (6 downto 0) := "0000000";
 		sevenOut5 : out std_logic_vector (6 downto 0) := "0000000";
 		-- Saída leds para PISO e memória, led7 indica a memória ativa (desligado é a romProfessor):
-		ledsOut : out std_logic_vector(7 downto 0) := "00000000"
+		ledsOut : out std_logic_vector(9 downto 0) := "0000000000"
 	);
 	end FinalProject;
   
 architecture labArch of FinalProject is
 	-- COMPONENTES UTILIZADOS:
-	component seteSegmentos is 
-    port (
-        V: in std_logic_vector (3 downto 0);
-        S: out std_logic_vector (6 downto 0)
-    );
-	end component;
-
 	component Timing_Reference is
 	port ( 
 		clk: in std_logic;
@@ -88,7 +81,13 @@ architecture labArch of FinalProject is
         clear : in std_logic
 	);
  	end component;
-
+	-- Apenas para debugar:
+	component seteSegmentos is
+		Port (
+			V: in std_logic_vector (3 downto 0);
+			S: out std_logic_vector (6 downto 0)
+		);
+	end component;
 	component morseDecoder is
 	port ( 
 		morse: in std_logic_vector (7 downto 0);
@@ -113,6 +112,7 @@ architecture labArch of FinalProject is
 		-- Debugging:
 		ledsOut(0) <= isDah;
 		ledsOut(1) <= endLetter; 
+		ledsOut(9 downto 2) <= letterInfo & sizeLetter(2 downto 0);
 
 		toggleEstado : ffToggle port map (
 			Q => state,
@@ -130,7 +130,7 @@ architecture labArch of FinalProject is
 			count => pause
 		);
 		contsizeLetter : counter port map (
-			clock => not pb(0),
+			clock => pb(0),
 			reset => endLetter,
 			count => sizeLetter
 		);
@@ -182,6 +182,11 @@ architecture labArch of FinalProject is
 		decoder : morseDecoder port map( 
 			morse => letterInfo & sizeLetter(2 downto 0),
 			sevenSegment => sevenOut0
+		);
+		-- Apenas para debugar:
+		seteD : seteSegmentos port map (
+			V => sizeLetter (3 downto 0),
+			S => sevenOut1
 		);
 		-- MUX para alternar a entrada da RAM
 		-- MUX PARA COLOCAR ALGUMA ANIMAÇÃO NOS DISPLAYS:
