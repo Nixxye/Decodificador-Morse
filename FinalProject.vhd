@@ -88,6 +88,13 @@ architecture labArch of FinalProject is
         clear : in std_logic
 	);
  	end component;
+
+	component morseDecoder is
+	port ( 
+		morse: in std_logic_vector (7 downto 0);
+		sevenSegment: out std_logic_vector (6 downto 0)
+	);
+	end component;
 	 -- Dah são os longos e dit são os curtos:
 	 signal clkCont : std_logic;
 	 signal pause : std_logic_vector (7 downto 0);
@@ -172,7 +179,10 @@ architecture labArch of FinalProject is
 			RAM_CLOCK => endLetter and not clkCont,
 			RAM_DATA_OUT => ramOut
 		);
-
+		decoder : morseDecoder port map( 
+			morse => letterInfo & sizeLetter(2 downto 0),
+			sevenSegment => sevenOut0
+		);
 		-- MUX para alternar a entrada da RAM
 		-- MUX PARA COLOCAR ALGUMA ANIMAÇÃO NOS DISPLAYS:
 end labArch;
