@@ -143,7 +143,7 @@ architecture labArch of FinalProject is
 		signal sizeLetter : std_logic_vector (7 downto 0);
 		signal isDah : std_logic;
 		signal sipoIn : std_logic;
-		signal state : std_logic;
+		signal state : std_logic := '0';
 		signal letterInfo : std_logic_vector (4 downto 0);
 		signal ramADD : std_logic_vector (6 downto 0);
 		signal ramADD1 : std_logic_vector (6 downto 0);
@@ -172,12 +172,12 @@ architecture labArch of FinalProject is
 		-- Debugging:
 		ledsOut(0) <= isDah;
 		ledsOut(1) <= endLetter; 
-		ledsOut(9 downto 2) <= letterInfo & sizeLetter(2 downto 0);
+		ledsOut(2) <= state;
 
-		sevenOut5 <= decoderOut5;
-		sevenOut4 <= decoderOut4;
-		sevenOut3 <= decoderOut3;
-		sevenOut2 <= decoderOut2;
+		sevenOut5(6 downto 0) <= decoderOut5(6 downto 0) when state ='1' else (others => '0');
+		sevenOut4(6 downto 0) <= decoderOut4(6 downto 0) when state ='1' else (others => '0');
+		sevenOut3(6 downto 0) <= decoderOut3(6 downto 0) when state ='1' else (others => '0');
+		sevenOut2(6 downto 0) <= decoderOut2(6 downto 0) when state ='1' else (others => '0');
 		
 		muxSeven1 : MUX7 port map (
 			switch => state,
@@ -188,8 +188,8 @@ architecture labArch of FinalProject is
 
 		muxSeven0 : MUX7 port map (
 			switch => state,
-			pIn0 => sevenLetterSize,
-			pIn1 => letter,
+			pIn0 => letter,
+			pIn1 => decoderOut0,
 			pOut => sevenOut0
 		);
 
@@ -213,7 +213,7 @@ architecture labArch of FinalProject is
 			count => pause
 		);
 		contsizeLetter : counter port map (
-			clock => pb(0),
+			clock => not pb(0), --Clock de descida
 			reset => endLetter,
 			count => sizeLetter
 		);
@@ -224,7 +224,7 @@ architecture labArch of FinalProject is
 			Reset => '0'
 		);
 		contimeDah : counter port map (
-			clock => clkCont,
+			clock => clkCont and not state,
 			reset => pb(0),
 			count => timeDah
 		);
@@ -232,13 +232,6 @@ architecture labArch of FinalProject is
 		toggleDah : ffToggle port map (
 			Q => isDah, 
 			Clk => (not isDah and timeDah(4)) or (isDah and not pb(0)),
-			Reset => '0'
-		);
-		ditOrDah : ffD port map (
-			Q => sipoIn,    
-			Clk => pb(0),   
-			D => isDah,
-			Set => '0',
 			Reset => '0'
 		);
 		-- Desloca quando o botão é solto:
@@ -262,12 +255,12 @@ architecture labArch of FinalProject is
 		);
 		-- Contador para o primeiro estado:
 		contRamADD1 : counter7 port map (
-			clock => endLetter and not clkCont, -- Em descida para ser depois dos outros.
+			clock => (endLetter) and not state, -- Em descida para ser depois dos outros.
 			reset =>'0',
 			count => ramADD1 
 		);
 		contRamADD2 : counter7 port map (
-			clock => clkContSlowed, -- Em descida para ser depois dos outros.
+			clock => clkContSlowed and state, -- Em descida para ser depois dos outros.
 			reset => (ramADD1(6) xnor ramADD2(6)) and
 					 (ramADD1(5) xnor ramADD2(5)) and
 					 (ramADD1(4) xnor ramADD2(4)) and
@@ -282,7 +275,7 @@ architecture labArch of FinalProject is
 			-- ENTRADA RAM : SIPO (5 bits) + sizeLetter (3 bits)
 			RAM_DATA_IN => letterInfo & sizeLetter(2 downto 0),
 			RAM_WR => not state,
-			RAM_CLOCK => endLetter and not clkCont,
+			RAM_CLOCK => (clkCont and endLetter and not clkCont and not state) or (clkContSlowed and state),--endLetter and not clkCont,
 			RAM_DATA_OUT => ramOut
 		);
 		decoder : morseDecoder port map( 
@@ -291,7 +284,7 @@ architecture labArch of FinalProject is
 		);
 		-- Apenas para debugar:
 		seteD : seteSegmentos port map (
-			V => sizeLetter (3 downto 0),
+			V => sizeLetter (3 downto 0),--ramADD1(3 downto 0),
 			S => sevenLetterSize
 		);
 

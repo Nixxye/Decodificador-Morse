@@ -19,7 +19,7 @@ begin
     begin
         if reset = '1' then
             counterA <= (others => '0'); -- Reinicia o counter
-        elsif rising_edge(clock) then
+        elsif falling_edge(clock) then
             if counterA = 255 then
                 counterA <= (others => '0'); -- Reinicia quando atinge 511
             else
