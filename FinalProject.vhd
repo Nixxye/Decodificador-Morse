@@ -224,7 +224,6 @@ architecture labArch of FinalProject is
 			reset => endLetter or state,
 			count => sizeLetter
 		);
-		-- AMBOS OS TOGGLES PRECISAM SER FALLING EDGE PARA QUE QUANDO O BOTÃO SEJA SOLTO O SISTEMA VERIFIQUE EM FALLING EDGE TODAS AS INFORMAÇÕES DO PULSO.
 		togglePause : ffToggle port map (
 			Q => endLetter,
 			Clk => (not endLetter and pause(5)) or (endLetter and not pb(0)), --Verifica pause para o tempo
@@ -236,7 +235,7 @@ architecture labArch of FinalProject is
 			count => timeDah
 		);
 		-- Define se é ponto ou traço de acordo com o tempo de pressionamento
-		toggleDah : ffToggle port map (
+		toggleDah : ffToggle1 port map (
 			Q => isDah, 
 			Clk => (not isDah and timeDah(4)) or (isDah and not pb(0)),
 			Reset => '0'
