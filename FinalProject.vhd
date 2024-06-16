@@ -221,7 +221,7 @@ architecture labArch of FinalProject is
 		);
 		contsizeLetter : counter port map (
 			clock => pb(0), --Clock de descida
-			reset => endLetter and not state,
+			reset => endLetter or state,
 			count => sizeLetter
 		);
 		-- AMBOS OS TOGGLES PRECISAM SER FALLING EDGE PARA QUE QUANDO O BOTÃO SEJA SOLTO O SISTEMA VERIFIQUE EM FALLING EDGE TODAS AS INFORMAÇÕES DO PULSO.
@@ -262,7 +262,7 @@ architecture labArch of FinalProject is
 		);
 		-- Contador para o primeiro estado:
 		contRamADD1 : counter7 port map (
-			clock => (endLetter) and not state, -- Em descida para ser depois dos outros.
+			clock => (endLetter) or state, -- Em descida para ser depois dos outros.
 			reset =>'0',
 			count => ramADD1 
 		);
