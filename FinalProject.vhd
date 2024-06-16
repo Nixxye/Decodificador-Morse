@@ -213,8 +213,8 @@ architecture labArch of FinalProject is
 			count => pause
 		);
 		contsizeLetter : counter port map (
-			clock => not pb(0), --Clock de descida
-			reset => endLetter,
+			clock => pb(0), --Clock de descida
+			reset => endLetter and not state,
 			count => sizeLetter
 		);
 		-- AMBOS OS TOGGLES PRECISAM SER FALLING EDGE PARA QUE QUANDO O BOTÃO SEJA SOLTO O SISTEMA VERIFIQUE EM FALLING EDGE TODAS AS INFORMAÇÕES DO PULSO.
