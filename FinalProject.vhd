@@ -61,6 +61,13 @@ architecture labArch of FinalProject is
 	);
 	end component;
 
+	component ffToggle1 is 
+	port(
+		Q : out std_logic;    
+		Clk : in std_logic;
+		Reset : in std_logic
+	);
+	end component;
 	component ffD is 
 	port(
 		Q : out std_logic;    
@@ -173,7 +180,7 @@ architecture labArch of FinalProject is
 		ledsOut(0) <= isDah;
 		ledsOut(1) <= endLetter; 
 		ledsOut(2) <= state;
-
+		ledsOut(9 downto 3) <= ramADD;
 		sevenOut5(6 downto 0) <= decoderOut5(6 downto 0) when state ='1' else (others => '0');
 		sevenOut4(6 downto 0) <= decoderOut4(6 downto 0) when state ='1' else (others => '0');
 		sevenOut3(6 downto 0) <= decoderOut3(6 downto 0) when state ='1' else (others => '0');
@@ -193,7 +200,7 @@ architecture labArch of FinalProject is
 			pOut => sevenOut0
 		);
 
-		toggleEstado : ffToggle port map (
+		toggleEstado : ffToggle1 port map (
 			Q => state,
 			Clk => (not pb(1)) or (ramADD1(0) and ramADD1(1) and ramADD1(2) and ramADD1(3) and ramADD1(4) and ramADD1(5) and ramADD1(6)), -- Pressionamento de botão ou RAM lotada:
 			Reset => '0'
@@ -243,7 +250,7 @@ architecture labArch of FinalProject is
 			clear => '0'
 		);
 		sp2 : BigSIPO port map (
-            clk => clkContSlowed,
+            clk => not clkContSlowed and state,
             reset => '0',
             serial_in => ramOut,
 			parallel_out0 => decoderIn0,
@@ -275,7 +282,7 @@ architecture labArch of FinalProject is
 			-- ENTRADA RAM : SIPO (5 bits) + sizeLetter (3 bits)
 			RAM_DATA_IN => letterInfo & sizeLetter(2 downto 0),
 			RAM_WR => not state,
-			RAM_CLOCK => (clkCont and endLetter and not clkCont and not state) or (clkContSlowed and state),--endLetter and not clkCont,
+			RAM_CLOCK => ((endLetter) and not state) or state,--endLetter and not clkCont,
 			RAM_DATA_OUT => ramOut
 		);
 		decoder : morseDecoder port map( 
@@ -284,7 +291,7 @@ architecture labArch of FinalProject is
 		);
 		-- Apenas para debugar:
 		seteD : seteSegmentos port map (
-			V => sizeLetter (3 downto 0),--ramADD1(3 downto 0),
+			V => ramADD1(3 downto 0),--ramADD1(3 downto 0),
 			S => sevenLetterSize
 		);
 
