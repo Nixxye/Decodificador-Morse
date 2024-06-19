@@ -200,6 +200,8 @@ architecture labArch of FinalProject is
 		sevenOut3(6 downto 0) <= decoderOut3(6 downto 0) when state ='1' else (others => '0');
 		sevenOut2(6 downto 0) <= decoderOut2(6 downto 0) when state ='1' else (others => '0');
 		
+		state <= sw;
+
 		db1: debouncer port map (
 			clk => CLK,
 			button => pb(1),
@@ -220,11 +222,11 @@ architecture labArch of FinalProject is
 			pOut => sevenOut0
 		);
 -- Trocar para chave levantada -> estado 1, chave abaixada -> estado 0
-		toggleEstado : ffToggle1 port map (
-			Q => state,
-			Clk => (sw) or (ramADD1(0) and ramADD1(1) and ramADD1(2) and ramADD1(3) and ramADD1(4) and ramADD1(5) and ramADD1(6)), -- Levantar chave ou RAM lotada:
-			Reset => '0'
-		);
+		-- toggleEstado : ffToggle1 port map (
+		-- 	Q => state,
+		-- 	Clk => (sw) or (ramADD1(0) and ramADD1(1) and ramADD1(2) and ramADD1(3) and ramADD1(4) and ramADD1(5) and ramADD1(6)), -- Levantar chave ou RAM lotada:
+		-- 	Reset => '0'
+		-- );
 
 		time : Timing_Reference port map (
 			clk => CLK,
