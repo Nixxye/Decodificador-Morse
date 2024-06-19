@@ -6,6 +6,7 @@ entity FinalProject is
 	port (
 		CLK: in std_logic; -- Pin connected to P11 (N14)
 		pb : in std_logic_vector (1 downto 0);
+		sw : in std_logic;
 		-- Saídas sete segmentos:
 		sevenOut0 : out std_logic_vector (6 downto 0) := "0000000";
 		sevenOut1 : out std_logic_vector (6 downto 0) := "0000000";
@@ -48,7 +49,8 @@ architecture labArch of FinalProject is
 		port (
 			clock : in std_logic;
 			reset : in std_logic;
-			count : out std_logic_vector(6 downto 0)
+			count : out std_logic_vector(6 downto 0);
+        	upDown : in std_logic
 		);
 	end component;
 	
@@ -140,6 +142,14 @@ architecture labArch of FinalProject is
 			pOut: out std_logic_vector (6 downto 0)
 		);
 	end component;
+
+	component debouncer is
+		port (
+			clk : in std_logic;
+			button : in std_logic;
+			debounced_button : out std_logic
+		);
+	end component;
 		-- Dah são os longos e dit são os curtos:
 		signal clkCont : std_logic;
 		signal clkContSlowed : std_logic;
@@ -160,6 +170,10 @@ architecture labArch of FinalProject is
 
 		signal sevenLetterSize : std_logic_vector(6 downto 0);
 		signal letter : std_logic_vector (6 downto 0);
+
+		signal rmLetter : std_logic;
+		signal debouncedPb1 : std_logic;
+
 
 		signal decoderOut0 : std_logic_vector(6 downto 0);
 		signal decoderOut1 : std_logic_vector(6 downto 0);
@@ -186,6 +200,12 @@ architecture labArch of FinalProject is
 		sevenOut3(6 downto 0) <= decoderOut3(6 downto 0) when state ='1' else (others => '0');
 		sevenOut2(6 downto 0) <= decoderOut2(6 downto 0) when state ='1' else (others => '0');
 		
+		db1: debouncer port map (
+			clk => CLK,
+			button => pb(1),
+			debounced_button => debouncedPb1
+		);
+
 		muxSeven1 : MUX7 port map (
 			switch => state,
 			pIn0 => sevenLetterSize,
@@ -199,10 +219,10 @@ architecture labArch of FinalProject is
 			pIn1 => decoderOut0,
 			pOut => sevenOut0
 		);
-
+-- Trocar para chave levantada -> estado 1, chave abaixada -> estado 0
 		toggleEstado : ffToggle1 port map (
 			Q => state,
-			Clk => (not pb(1)) or (ramADD1(0) and ramADD1(1) and ramADD1(2) and ramADD1(3) and ramADD1(4) and ramADD1(5) and ramADD1(6)), -- Pressionamento de botão ou RAM lotada:
+			Clk => (sw) or (ramADD1(0) and ramADD1(1) and ramADD1(2) and ramADD1(3) and ramADD1(4) and ramADD1(5) and ramADD1(6)), -- Levantar chave ou RAM lotada:
 			Reset => '0'
 		);
 
@@ -216,35 +236,35 @@ architecture labArch of FinalProject is
 		);
 		contpause : counter port map (
 			clock => clkCont,
-			reset => not pb(0),
+			reset => not debouncedPb1,
 			count => pause
 		);
 		contsizeLetter : counter port map (
-			clock => pb(0), --Clock de descida
-			reset => endLetter or state,
+			clock => debouncedPb1, --Clock de descida
+			reset => endLetter or state or rmLetter,
 			count => sizeLetter
 		);
 		togglePause : ffToggle port map (
 			Q => endLetter,
-			Clk => (not endLetter and pause(5)) or (endLetter and not pb(0)), --Verifica pause para o tempo
+			Clk => (not endLetter and pause(5)) or (endLetter and not debouncedPb1), --Verifica pause para o tempo
 			Reset => '0'
 		);
 		contimeDah : counter port map (
 			clock => clkCont and not state,
-			reset => pb(0),
+			reset => debouncedPb1,
 			count => timeDah
 		);
 		-- Define se é ponto ou traço de acordo com o tempo de pressionamento
 		toggleDah : ffToggle1 port map (
 			Q => isDah, 
-			Clk => (not isDah and timeDah(4)) or (isDah and not pb(0)),
+			Clk => (not isDah and timeDah(4)) or (isDah and not debouncedPb1),
 			Reset => '0'
 		);
 		-- Desloca quando o botão é solto:
 		sp1: SIPO port map(
 			pOut => letterInfo,
 			serialIn => isDah,
-			clk => pb(0),
+			clk => debouncedPb1,
 			set => '0',
 			clear => '0'
 		);
@@ -259,11 +279,17 @@ architecture labArch of FinalProject is
 			parallel_out4 => decoderIn4,
 			parallel_out5 => decoderIn5
 		);
+		removeLetter : ffToggle port map (
+			Q => rmLetter,
+			Clk => (not pb(0) and not rmLetter) or (clkCont and rmLetter), -- Pressionamento de botão para ligar e um clock para desligar
+			Reset => '0'
+		);
 		-- Contador para o primeiro estado:
 		contRamADD1 : counter7 port map (
-			clock => (endLetter) or state, -- Em descida para ser depois dos outros.
+			clock => ((endLetter) or state) and not rmLetter, -- Em descida para ser depois dos outros.
 			reset =>'0',
-			count => ramADD1 
+			count => ramADD1,
+			upDown => rmLetter
 		);
 		contRamADD2 : counter7 port map (
 			clock => clkContSlowed and state, -- Em descida para ser depois dos outros.
@@ -274,7 +300,8 @@ architecture labArch of FinalProject is
 					 (ramADD1(2) xnor ramADD2(2)) and
 					 (ramADD1(1) xnor ramADD2(1)) and
 					 (ramADD1(0) xnor ramADD2(0)),
-			count => ramADD2 
+			count => ramADD2,
+			upDown => '0'
 		);
 		ram : Single_port_RAM_VHDL port map(
 			RAM_ADDR => ramADD,
@@ -290,7 +317,7 @@ architecture labArch of FinalProject is
 		);
 		-- Apenas para debugar:
 		seteD : seteSegmentos port map (
-			V => ramADD1(3 downto 0),--ramADD1(3 downto 0),
+			V => sizeLetter(3 downto 0),--ramADD1(3 downto 0),
 			S => sevenLetterSize
 		);
 
