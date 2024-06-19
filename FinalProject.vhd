@@ -160,21 +160,19 @@ architecture labArch of FinalProject is
 		signal sizeLetter : std_logic_vector (7 downto 0);
 		signal isDah : std_logic;
 		signal sipoIn : std_logic;
-		signal state : std_logic := '0';
+		-- signal sw : std_logic := '0';
 		signal letterInfo : std_logic_vector (4 downto 0);
 		signal ramADD : std_logic_vector (6 downto 0);
 		signal ramADD1 : std_logic_vector (6 downto 0);
 		signal ramADD2 : std_logic_vector (6 downto 0);
 		signal ramOut : std_logic_vector (7 downto 0);
 		
-
 		signal sevenLetterSize : std_logic_vector(6 downto 0);
 		signal letter : std_logic_vector (6 downto 0);
 
 		signal rmLetter : std_logic;
 		signal debouncedPb1 : std_logic;
-
-
+		-- Decoders para o segundo estado:
 		signal decoderOut0 : std_logic_vector(6 downto 0);
 		signal decoderOut1 : std_logic_vector(6 downto 0);
 		signal decoderOut2 : std_logic_vector(6 downto 0);
@@ -189,18 +187,23 @@ architecture labArch of FinalProject is
 		signal decoderIn4 : std_logic_vector(7 downto 0);
 		signal decoderIn5 : std_logic_vector(7 downto 0);
 
+		signal pauseInit : std_logic := '0'; -- Inicializa o sistema pausado
 	begin
 		-- Debugging:
 		ledsOut(0) <= isDah;
 		ledsOut(1) <= endLetter; 
-		ledsOut(2) <= state;
+		ledsOut(2) <= sw;
 		ledsOut(9 downto 3) <= ramADD;
-		sevenOut5(6 downto 0) <= decoderOut5(6 downto 0) when state ='1' else (others => '0');
-		sevenOut4(6 downto 0) <= decoderOut4(6 downto 0) when state ='1' else (others => '0');
-		sevenOut3(6 downto 0) <= decoderOut3(6 downto 0) when state ='1' else (others => '0');
-		sevenOut2(6 downto 0) <= decoderOut2(6 downto 0) when state ='1' else (others => '0');
-		
-		state <= sw;
+		sevenOut5(6 downto 0) <= decoderOut5(6 downto 0) when sw ='1' else (others => '0');
+		sevenOut4(6 downto 0) <= decoderOut4(6 downto 0) when sw ='1' else (others => '0');
+		sevenOut3(6 downto 0) <= decoderOut3(6 downto 0) when sw ='1' else (others => '0');
+		sevenOut2(6 downto 0) <= decoderOut2(6 downto 0) when sw ='1' else (others => '0');
+-- Inicia o sistema pausado:
+		initToggle : ffToggle1 port map (
+			Q => pauseInit,
+			Clk => (not pauseInit and not debouncedPb1),
+			Reset => '0'
+		);
 
 		db1: debouncer port map (
 			clk => CLK,
@@ -209,24 +212,18 @@ architecture labArch of FinalProject is
 		);
 
 		muxSeven1 : MUX7 port map (
-			switch => state,
+			switch => sw,
 			pIn0 => sevenLetterSize,
 			pIn1 => decoderOut1,
 			pOut => sevenOut1
 		);
 
 		muxSeven0 : MUX7 port map (
-			switch => state,
+			switch => sw,
 			pIn0 => letter,
 			pIn1 => decoderOut0,
 			pOut => sevenOut0
 		);
--- Trocar para chave levantada -> estado 1, chave abaixada -> estado 0
-		-- toggleEstado : ffToggle1 port map (
-		-- 	Q => state,
-		-- 	Clk => (sw) or (ramADD1(0) and ramADD1(1) and ramADD1(2) and ramADD1(3) and ramADD1(4) and ramADD1(5) and ramADD1(6)), -- Levantar chave ou RAM lotada:
-		-- 	Reset => '0'
-		-- );
 
 		time : Timing_Reference port map (
 			clk => CLK,
@@ -238,12 +235,12 @@ architecture labArch of FinalProject is
 		);
 		contpause : counter port map (
 			clock => clkCont,
-			reset => not debouncedPb1,
+			reset => not debouncedPb1,-- or not pauseInit,
 			count => pause
 		);
 		contsizeLetter : counter port map (
 			clock => debouncedPb1, --Clock de descida
-			reset => endLetter or state or rmLetter,
+			reset => endLetter or sw or rmLetter,-- or not pauseInit,
 			count => sizeLetter
 		);
 		togglePause : ffToggle port map (
@@ -252,7 +249,7 @@ architecture labArch of FinalProject is
 			Reset => '0'
 		);
 		contimeDah : counter port map (
-			clock => clkCont and not state,
+			clock => clkCont and not sw,
 			reset => debouncedPb1,
 			count => timeDah
 		);
@@ -271,7 +268,7 @@ architecture labArch of FinalProject is
 			clear => '0'
 		);
 		sp2 : BigSIPO port map (
-            clk => not clkContSlowed and state,
+            clk => not clkContSlowed and sw,
             reset => '0',
             serial_in => ramOut,
 			parallel_out0 => decoderIn0,
@@ -288,13 +285,13 @@ architecture labArch of FinalProject is
 		);
 		-- Contador para o primeiro estado:
 		contRamADD1 : counter7 port map (
-			clock => ((endLetter) or state) and not rmLetter, -- Em descida para ser depois dos outros.
+			clock => ((endLetter) or sw) and not rmLetter, -- Em descida para ser depois dos outros.
 			reset =>'0',
 			count => ramADD1,
 			upDown => rmLetter
 		);
 		contRamADD2 : counter7 port map (
-			clock => clkContSlowed and state, -- Em descida para ser depois dos outros.
+			clock => clkContSlowed and sw, -- Em descida para ser depois dos outros.
 			reset => (ramADD1(6) xnor ramADD2(6)) and
 					 (ramADD1(5) xnor ramADD2(5)) and
 					 (ramADD1(4) xnor ramADD2(4)) and
@@ -309,8 +306,8 @@ architecture labArch of FinalProject is
 			RAM_ADDR => ramADD,
 			-- ENTRADA RAM : SIPO (5 bits) + sizeLetter (3 bits)
 			RAM_DATA_IN => letterInfo & sizeLetter(2 downto 0),
-			RAM_WR => not state,
-			RAM_CLOCK => ((endLetter) and not state) or state,--endLetter and not clkCont,
+			RAM_WR => not sw,
+			RAM_CLOCK => ((endLetter) and not sw) or sw,--endLetter and not clkCont,
 			RAM_DATA_OUT => ramOut
 		);
 		decoder : morseDecoder port map( 
@@ -324,7 +321,7 @@ architecture labArch of FinalProject is
 		);
 
 		ramInput : MUX7 port map (
-			switch => state,
+			switch => sw,
 			pIn0 => ramADD1,
 			pIn1 => ramADD2,
 			pOut => ramADD
