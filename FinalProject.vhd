@@ -167,7 +167,7 @@ architecture labArch of FinalProject is
 		signal ramADD2 : std_logic_vector (6 downto 0);
 		signal ramOut : std_logic_vector (7 downto 0);
 		
-		signal sevenLetterSize : std_logic_vector(6 downto 0);
+		signal sevenRamADD : std_logic_vector(6 downto 0);
 		signal letter : std_logic_vector (6 downto 0);
 
 		signal rmLetter : std_logic;
@@ -192,18 +192,12 @@ architecture labArch of FinalProject is
 		-- Debugging:
 		ledsOut(0) <= isDah;
 		ledsOut(1) <= endLetter; 
-		ledsOut(2) <= sw;
-		ledsOut(9 downto 3) <= ramADD;
+		-- ledsOut(2) <= sw;
+		ledsOut(9 downto 2) <= letterInfo & sizeLetter(2 downto 0);
 		sevenOut5(6 downto 0) <= decoderOut5(6 downto 0) when sw ='1' else (others => '0');
 		sevenOut4(6 downto 0) <= decoderOut4(6 downto 0) when sw ='1' else (others => '0');
 		sevenOut3(6 downto 0) <= decoderOut3(6 downto 0) when sw ='1' else (others => '0');
 		sevenOut2(6 downto 0) <= decoderOut2(6 downto 0) when sw ='1' else (others => '0');
--- Inicia o sistema pausado:
-		initToggle : ffToggle1 port map (
-			Q => pauseInit,
-			Clk => (not pauseInit and not debouncedPb1),
-			Reset => '0'
-		);
 
 		db1: debouncer port map (
 			clk => CLK,
@@ -213,7 +207,7 @@ architecture labArch of FinalProject is
 
 		muxSeven1 : MUX7 port map (
 			switch => sw,
-			pIn0 => sevenLetterSize,
+			pIn0 => sevenRamADD,
 			pIn1 => decoderOut1,
 			pOut => sevenOut1
 		);
@@ -235,12 +229,12 @@ architecture labArch of FinalProject is
 		);
 		contpause : counter port map (
 			clock => clkCont,
-			reset => not debouncedPb1,-- or not pauseInit,
+			reset => not debouncedPb1,
 			count => pause
 		);
 		contsizeLetter : counter port map (
 			clock => debouncedPb1, --Clock de descida
-			reset => endLetter or sw or rmLetter,-- or not pauseInit,
+			reset => endLetter or sw or rmLetter,
 			count => sizeLetter
 		);
 		togglePause : ffToggle port map (
@@ -316,8 +310,8 @@ architecture labArch of FinalProject is
 		);
 		-- Apenas para debugar:
 		seteD : seteSegmentos port map (
-			V => sizeLetter(3 downto 0),--ramADD1(3 downto 0),
-			S => sevenLetterSize
+			V => ramADD1(3 downto 0),--sizeLetter(3 downto 0),
+			S => sevenRamADD
 		);
 
 		ramInput : MUX7 port map (
@@ -351,6 +345,4 @@ architecture labArch of FinalProject is
 			morse => decoderIn5,
 			sevenSegment => decoderOut5
 		); 
-		-- myMUX PARA COLOCAR ALGUMA ANIMAÇÃO NOS DISPLAYS:
 end labArch;
--- CRIAR UM BOTÃO PARA APAGAR A ÚLTIMA LETRA?
