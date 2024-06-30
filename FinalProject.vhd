@@ -189,7 +189,6 @@ architecture labArch of FinalProject is
 
 		signal pauseInit : std_logic := '0'; -- Inicializa o sistema pausado
 	begin
-		-- Debugging:
 		ledsOut(0) <= isDah;
 		ledsOut(1) <= endLetter; 
 		-- ledsOut(2) <= sw;
@@ -198,7 +197,7 @@ architecture labArch of FinalProject is
 		sevenOut4(6 downto 0) <= decoderOut4(6 downto 0) when sw ='1' else (others => '0');
 		sevenOut3(6 downto 0) <= decoderOut3(6 downto 0) when sw ='1' else (others => '0');
 		sevenOut2(6 downto 0) <= decoderOut2(6 downto 0) when sw ='1' else (others => '0');
-
+		-- Minimiza as inconsistências do botão:
 		db1: debouncer port map (
 			clk => CLK,
 			button => pb(1),
@@ -232,11 +231,13 @@ architecture labArch of FinalProject is
 			reset => not debouncedPb1,
 			count => pause
 		);
+		-- Conta o tamanho da letra:
 		contsizeLetter : counter port map (
 			clock => debouncedPb1, --Clock de descida
 			reset => endLetter or sw or rmLetter,
 			count => sizeLetter
 		);
+		-- Define se a letra acabou de acordo com o tempo sem pressionar o botão:
 		togglePause : ffToggle port map (
 			Q => endLetter,
 			Clk => (not endLetter and pause(5)) or (endLetter and not debouncedPb1), --Verifica pause para o tempo
@@ -261,10 +262,11 @@ architecture labArch of FinalProject is
 			set => '0',
 			clear => '0'
 		);
+		-- Carrega as informações da RAM para os decoders -> displays:
 		sp2 : BigSIPO port map (
-            clk => not clkContSlowed and sw,
-            reset => '0',
-            serial_in => ramOut,
+            		clk => not clkContSlowed and sw,
+		    	reset => '0',
+		    	serial_in => ramOut,
 			parallel_out0 => decoderIn0,
 			parallel_out1 => decoderIn1,
 			parallel_out2 => decoderIn2,
@@ -272,6 +274,7 @@ architecture labArch of FinalProject is
 			parallel_out4 => decoderIn4,
 			parallel_out5 => decoderIn5
 		);
+		-- Remove a última letra ao pressionar pb(0)
 		removeLetter : ffToggle port map (
 			Q => rmLetter,
 			Clk => (not pb(0) and not rmLetter) or (clkCont and rmLetter), -- Pressionamento de botão para ligar e um clock para desligar
@@ -284,6 +287,7 @@ architecture labArch of FinalProject is
 			count => ramADD1,
 			upDown => rmLetter
 		);
+		-- Contador para o segundo estado:
 		contRamADD2 : counter7 port map (
 			clock => clkContSlowed and sw, -- Em descida para ser depois dos outros.
 			reset => (ramADD1(6) xnor ramADD2(6)) and
@@ -308,12 +312,10 @@ architecture labArch of FinalProject is
 			morse => letterInfo & sizeLetter(2 downto 0),
 			sevenSegment => letter
 		);
-		-- Apenas para debugar:
 		seteD : seteSegmentos port map (
 			V => ramADD1(3 downto 0),--sizeLetter(3 downto 0),
 			S => sevenRamADD
 		);
-
 		ramInput : MUX7 port map (
 			switch => sw,
 			pIn0 => ramADD1,
